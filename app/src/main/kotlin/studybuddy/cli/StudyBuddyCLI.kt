@@ -3,6 +3,7 @@ package studybuddy.cli
 import studybuddy.model.Task
 import studybuddy.service.TaskService
 import studybuddy.service.StudySessionService
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -368,7 +369,7 @@ class StudyBuddyCLI {
         }
     }
     
-    private fun formatDuration(duration: java.time.Duration?): String {
+    private fun formatDuration(duration: Duration?): String {
         if (duration == null) return "0h 0m"
         val hours = duration.toHours()
         val minutes = duration.toMinutes() % 60
