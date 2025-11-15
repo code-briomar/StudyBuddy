@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.briomarftw.studybudy"
+    namespace = "com.example.studybuddy"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.briomarftw.studybudy"
+        applicationId = "com.example.studybuddy"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -41,6 +41,10 @@ android {
 
 dependencies {
 
+    implementation("androidx.core:core-ktx:1.9.0")
+    implementation("androidx.appcompat:appcompat:1.6.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.0")
+    implementation("com.google.android.material:material:1.8.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
