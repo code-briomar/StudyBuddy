@@ -28,6 +28,7 @@ import com.example.studybuddy.models.StudySession
 import com.example.studybuddy.notification.ReminderWorker
 import com.example.studybuddy.ui.assignments.ManageAssignmentsActivity
 
+
 class DashboardActivity : AppCompatActivity() {
 
     private lateinit var totalStudyTime: TextView
@@ -108,11 +109,10 @@ class DashboardActivity : AppCompatActivity() {
         assignmentAdapter = AssignmentAdapter(
             emptyList(),
             databaseHelper,
-         onCheckboxClicked = { assignment ->
-            val newCompletionState = !assignment.isCompleted
-            showCompletionConfirmationDialog(assignment, newCompletionState)
-        }
-        )
+            onCheckboxClicked = { assignment ->
+                val newCompletionState = !assignment.isCompleted
+                showCompletionConfirmationDialog(assignment, newCompletionState)
+        })
         upcomingAssignmentsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@DashboardActivity)
             adapter = assignmentAdapter
@@ -123,14 +123,14 @@ class DashboardActivity : AppCompatActivity() {
         val sessions = databaseHelper.getAllStudySessions()
         val totalMinutes = sessions.sumOf { it.durationMinutes }
         val streak = databaseHelper.calculateCurrentStreak()
-        val upcomingAssignments = databaseHelper.getUpcomingAssignments()
+        val incompleteAssignments = databaseHelper.getUpcomingAssignments()
 
         updateTotalStudyTime(totalMinutes)
         updateCurrentStreak(streak)
         updateWeeklyProgress(totalMinutes)
-        updateUpcomingAssignmentsCount(upcomingAssignments.size)
+        updateUpcomingAssignmentsCount(incompleteAssignments)
         updateRecentSessions(sessions)
-        updateUpcomingAssignments(upcomingAssignments)
+        updateUpcomingAssignments(incompleteAssignments)
     }
 
     private fun updateTotalStudyTime(totalMinutes: Int) {
@@ -149,8 +149,18 @@ class DashboardActivity : AppCompatActivity() {
         weeklyProgress.text = "Studied ${hours}h ${minutes}m this week"
     }
 
-    private fun updateUpcomingAssignmentsCount(count: Int) {
-        upcomingAssignmentsCount.text = "$count upcoming"
+    private fun updateUpcomingAssignmentsCount(assignments: List<com.example.studybuddy.models.Assignment>) {
+        val now = System.currentTimeMillis()
+
+        val upcomingCount = assignments.count { it.dueDate.time >= now }
+        val overdueCount = assignments.count { it.dueDate.time < now }
+
+        upcomingAssignmentsCount.text = when {
+            overdueCount > 0 && upcomingCount > 0 -> "$upcomingCount upcoming, $overdueCount overdue"
+            overdueCount > 0 -> "$overdueCount overdue"
+            upcomingCount > 0 -> "$upcomingCount upcoming"
+            else -> "No assignments"
+        }
     }
 
     private fun updateRecentSessions(sessions: List<StudySession>) {

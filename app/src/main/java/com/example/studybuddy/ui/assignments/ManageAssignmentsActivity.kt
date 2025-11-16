@@ -31,6 +31,7 @@ class ManageAssignmentsActivity : AppCompatActivity() {
 
     private lateinit var allAssignmentsRecyclerView: RecyclerView
     private lateinit var assignmentCountText: TextView
+    private lateinit var addAssignmentFab: com.google.android.material.floatingactionbutton.FloatingActionButton
     private lateinit var assignmentAdapter: AssignmentAdapter
     private val databaseHelper: DatabaseHelper by lazy { (application as StudyBuddyApplication).databaseHelper }
 
@@ -56,6 +57,11 @@ class ManageAssignmentsActivity : AppCompatActivity() {
     private fun initializeViews() {
         allAssignmentsRecyclerView = findViewById(R.id.allAssignmentsRecyclerView)
         assignmentCountText = findViewById(R.id.assignmentCountText)
+        addAssignmentFab = findViewById(R.id.addAssignmentFab)
+
+        addAssignmentFab.setOnClickListener {
+            showAddAssignmentDialog()
+        }
     }
 
     private fun handleWindowInsets() {
@@ -207,6 +213,65 @@ class ManageAssignmentsActivity : AppCompatActivity() {
             .setPositiveButton("Delete") { _, _ ->
                 databaseHelper.deleteAssignment(assignment.assignmentId)
                 loadAllAssignments()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showAddAssignmentDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_assignment, null)
+
+        val titleInput = dialogView.findViewById<EditText>(R.id.addAssignmentTitle)
+        val descriptionInput = dialogView.findViewById<EditText>(R.id.addAssignmentDescription)
+        val courseSpinner = dialogView.findViewById<Spinner>(R.id.addAssignmentCourseSpinner)
+        val dueDateText = dialogView.findViewById<TextView>(R.id.addAssignmentDueDate)
+
+        val courses = databaseHelper.getAllCourses()
+        val courseNames = courses.map { it.name }
+        val courseAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, courseNames)
+        courseAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        courseSpinner.adapter = courseAdapter
+
+        val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, 7) // Default to 1 week from now
+        var selectedDueDate = calendar.time
+        dueDateText.text = dateFormat.format(selectedDueDate)
+
+        dueDateText.setOnClickListener {
+            val cal = Calendar.getInstance()
+            cal.time = selectedDueDate
+
+            DatePickerDialog(
+                this,
+                { _, year, month, dayOfMonth ->
+                    cal.set(year, month, dayOfMonth)
+                    selectedDueDate = cal.time
+                    dueDateText.text = dateFormat.format(selectedDueDate)
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+            ).show()
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Add Assignment")
+            .setView(dialogView)
+            .setPositiveButton("Add") { _, _ ->
+                val title = titleInput.text.toString().trim()
+                val description = descriptionInput.text.toString().trim()
+                val selectedCourse = courses[courseSpinner.selectedItemPosition]
+
+                if (title.isNotEmpty()) {
+                    databaseHelper.addAssignment(
+                        title,
+                        description,
+                        selectedCourse.courseId,
+                        selectedDueDate
+                    )
+                    loadAllAssignments()
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()

@@ -280,8 +280,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val cursor = db.query(
             TABLE_ASSIGNMENTS,
             null,
-            "$COLUMN_IS_COMPLETED = ? AND $COLUMN_DUE_DATE >= ?",
-            arrayOf("0", System.currentTimeMillis().toString()),
+            "$COLUMN_IS_COMPLETED = ?",
+            arrayOf("0"),
             null, null,
             "$COLUMN_DUE_DATE ASC"
         )
@@ -342,6 +342,19 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             arrayOf(assignmentId.toString())
         )
         return rowsDeleted > 0
+    }
+
+    fun addAssignment(title: String, description: String, courseId: Int, dueDate: Date): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ASSIGNMENT_TITLE, title)
+            put(COLUMN_ASSIGNMENT_DESCRIPTION, description)
+            put(COLUMN_COURSE_ID, courseId)
+            put(COLUMN_DUE_DATE, dueDate.time)
+            put(COLUMN_IS_COMPLETED, 0)
+            put(COLUMN_CREATED_DATE, System.currentTimeMillis())
+        }
+        return db.insert(TABLE_ASSIGNMENTS, null, values)
     }
 
     fun calculateCurrentStreak(): Int {
