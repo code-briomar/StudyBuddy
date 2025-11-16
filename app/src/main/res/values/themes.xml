@@ -8,6 +8,11 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="Theme.StudyBuddy.NoActionBar" parent="Theme.StudyBuddy">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
     <!-- Shape Appearance Styles -->
     <style name="ShapeAppearance.App.SmallComponent"
         parent="ShapeAppearance.Material3.SmallComponent">
