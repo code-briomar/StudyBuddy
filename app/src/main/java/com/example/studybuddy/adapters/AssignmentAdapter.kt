@@ -16,11 +16,9 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-// --- FIX #1: ADJUST THE CONSTRUCTOR PARAMETERS ---
 class AssignmentAdapter(
     private var assignments: List<Assignment> = emptyList(),
     private val databaseHelper: DatabaseHelper,
-    // This now correctly expects a lambda with a single `Assignment` parameter.
     private val onCheckboxClicked: ((Assignment) -> Unit)? = null,
     private val onAssignmentLongClick: ((Assignment) -> Unit)? = null
 ) : RecyclerView.Adapter<AssignmentAdapter.ViewHolder>() {
@@ -53,43 +51,33 @@ class AssignmentAdapter(
         val background = holder.courseColorView.background as GradientDrawable
         background.setColor(courseColor)
 
-        // --- FIX #2: REMOVE REDUNDANT `isChecked` CALL ---
-        // You set this again below after disabling the listener, which is the correct pattern.
-        // holder.completionCheckbox.isChecked = assignment.isCompleted (This line is redundant)
-
-        // Apply strikethrough if completed
+        // strikethrough for completed
         if (assignment.isCompleted) {
             holder.assignmentTitle.paintFlags = holder.assignmentTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
         } else {
             holder.assignmentTitle.paintFlags = holder.assignmentTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
         }
 
-        // Change due date color if overdue
+        // red due date if overdue
         if (!assignment.isCompleted && assignment.dueDate.time < System.currentTimeMillis()) {
             holder.assignmentDueDate.setTextColor(Color.parseColor("#FF6B6B"))
         } else {
-            // Revert color for items that are not overdue
             holder.assignmentDueDate.setTextColor(Color.parseColor("#666666"))
         }
 
-        // A. Set the checkbox state without firing listeners
         holder.completionCheckbox.setOnCheckedChangeListener(null)
         holder.completionCheckbox.isChecked = assignment.isCompleted
 
-        // B. Set the click listener ONLY on the checkbox
         holder.completionCheckbox.setOnClickListener {
-            // Invoke the specific checkbox listener from the constructor
             onCheckboxClicked?.invoke(assignment)
         }
 
-        // C. Make the main item view non-clickable to avoid confusion
         holder.itemView.isClickable = false
         holder.itemView.setOnClickListener(null)
 
-        // D. The long-click listener remains on the entire item view
         holder.itemView.setOnLongClickListener {
             onAssignmentLongClick?.invoke(assignment)
-            true // Consume the long-click event
+            true
         }
     }
 
