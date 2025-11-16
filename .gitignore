@@ -33,4 +33,4 @@ local.properties
 .gradle/
 .idea
 build/
-workspace.xml
+/.idea/workspace.xml
