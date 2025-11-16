@@ -2,11 +2,13 @@ package com.example.studybuddy.ui.dashboard
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -19,20 +21,26 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.studybuddy.R
 import com.example.studybuddy.StudyBuddyApplication
+import com.example.studybuddy.adapters.AssignmentAdapter
 import com.example.studybuddy.adapters.StudySessionAdapter
 import com.example.studybuddy.database.DatabaseHelper
 import com.example.studybuddy.models.StudySession
 import com.example.studybuddy.notification.ReminderWorker
+import com.example.studybuddy.ui.assignments.ManageAssignmentsActivity
 
 class DashboardActivity : AppCompatActivity() {
 
     private lateinit var totalStudyTime: TextView
     private lateinit var currentStreak: TextView
     private lateinit var weeklyProgress: TextView
+    private lateinit var upcomingAssignmentsCount: TextView
     private lateinit var recentSessionsRecyclerView: RecyclerView
+    private lateinit var upcomingAssignmentsRecyclerView: RecyclerView
+    private lateinit var manageAssignmentsButton: Button
     private lateinit var testNotificationButton: Button
 
     private lateinit var studySessionAdapter: StudySessionAdapter
+    private lateinit var assignmentAdapter: AssignmentAdapter
     private val databaseHelper: DatabaseHelper by lazy { (application as StudyBuddyApplication).databaseHelper }
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -48,8 +56,13 @@ class DashboardActivity : AppCompatActivity() {
 
         initializeViews()
         handleWindowInsets()
-        setupRecyclerView()
+        setupRecyclerViews()
         loadDashboardData()
+
+        manageAssignmentsButton.setOnClickListener {
+            val intent = Intent(this, ManageAssignmentsActivity::class.java)
+            startActivity(intent)
+        }
 
         testNotificationButton.setOnClickListener {
             val reminderWorkRequest = OneTimeWorkRequestBuilder<ReminderWorker>().build()
@@ -60,13 +73,17 @@ class DashboardActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         requestNotificationPermission()
+        loadDashboardData() // Refresh data when returning to activity
     }
 
     private fun initializeViews() {
         totalStudyTime = findViewById(R.id.totalStudyTime)
         currentStreak = findViewById(R.id.currentStreak)
         weeklyProgress = findViewById(R.id.weeklyProgress)
+        upcomingAssignmentsCount = findViewById(R.id.upcomingAssignmentsCount)
         recentSessionsRecyclerView = findViewById(R.id.recentSessionsRecyclerView)
+        upcomingAssignmentsRecyclerView = findViewById(R.id.upcomingAssignmentsRecyclerView)
+        manageAssignmentsButton = findViewById(R.id.manageAssignmentsButton)
         testNotificationButton = findViewById(R.id.test_notification_button)
     }
 
@@ -79,11 +96,26 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupRecyclerView() {
+    private fun setupRecyclerViews() {
+        // Study Sessions RecyclerView
         studySessionAdapter = StudySessionAdapter(emptyList(), databaseHelper)
         recentSessionsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@DashboardActivity)
             adapter = studySessionAdapter
+        }
+
+        // Assignments RecyclerView
+        assignmentAdapter = AssignmentAdapter(
+            emptyList(),
+            databaseHelper,
+         onCheckboxClicked = { assignment ->
+            val newCompletionState = !assignment.isCompleted
+            showCompletionConfirmationDialog(assignment, newCompletionState)
+        }
+        )
+        upcomingAssignmentsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@DashboardActivity)
+            adapter = assignmentAdapter
         }
     }
 
@@ -91,11 +123,14 @@ class DashboardActivity : AppCompatActivity() {
         val sessions = databaseHelper.getAllStudySessions()
         val totalMinutes = sessions.sumOf { it.durationMinutes }
         val streak = databaseHelper.calculateCurrentStreak()
+        val upcomingAssignments = databaseHelper.getUpcomingAssignments()
 
         updateTotalStudyTime(totalMinutes)
         updateCurrentStreak(streak)
         updateWeeklyProgress(totalMinutes)
+        updateUpcomingAssignmentsCount(upcomingAssignments.size)
         updateRecentSessions(sessions)
+        updateUpcomingAssignments(upcomingAssignments)
     }
 
     private fun updateTotalStudyTime(totalMinutes: Int) {
@@ -114,8 +149,35 @@ class DashboardActivity : AppCompatActivity() {
         weeklyProgress.text = "Studied ${hours}h ${minutes}m this week"
     }
 
+    private fun updateUpcomingAssignmentsCount(count: Int) {
+        upcomingAssignmentsCount.text = "$count upcoming"
+    }
+
     private fun updateRecentSessions(sessions: List<StudySession>) {
         studySessionAdapter.updateSessions(sessions)
+    }
+
+    private fun updateUpcomingAssignments(assignments: List<com.example.studybuddy.models.Assignment>) {
+        assignmentAdapter.updateAssignments(assignments)
+    }
+
+    private fun showCompletionConfirmationDialog(assignment: com.example.studybuddy.models.Assignment, isCompleted: Boolean) {
+        val action = if (isCompleted) "completed" else "incomplete"
+        val message = if (isCompleted) {
+            "Mark \"${assignment.title}\" as completed?"
+        } else {
+            "Mark \"${assignment.title}\" as incomplete?"
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Confirm")
+            .setMessage(message)
+            .setPositiveButton("Yes") { _, _ ->
+                databaseHelper.updateAssignmentCompletion(assignment.assignmentId, isCompleted)
+                loadDashboardData()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun requestNotificationPermission() {

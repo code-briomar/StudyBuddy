@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/light_gray">
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main_content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@color/light_gray">
+    android:padding="16dp">
 
     <!-- Header -->
     <TextView
@@ -16,7 +22,8 @@
         android:textSize="28sp"
         android:textStyle="bold"
         android:textColor="@color/dark_gray"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="24dp"
+        android:layout_marginTop="15dp" />
 
     <!-- Stats Row -->
     <LinearLayout
@@ -127,6 +134,58 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+
+    <!-- Upcoming Assignments -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="10dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Pending Assignments"
+                android:textColor="#000000"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/upcomingAssignmentsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 upcoming"
+                android:textColor="#666666"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/upcomingAssignmentsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:nestedScrollingEnabled="false"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/manageAssignmentsButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Manage Assignments"
+        android:textSize="14sp"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_marginBottom="20dp" />
+
+
     <!-- Recent Sessions -->
     <TextView
         android:layout_width="match_parent"
@@ -149,4 +208,6 @@
         android:layout_height="wrap_content"
         android:text="Test Notification" />
 
+
 </LinearLayout>
+</ScrollView>
