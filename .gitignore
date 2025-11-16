@@ -28,3 +28,9 @@ replay_pid*
 
 # For SDK path (everyone replace the path in this file with your own)
 local.properties
+
+# unnecessary files
+.gradle/
+.idea
+build/
+workspace.xml
