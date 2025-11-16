@@ -39,6 +39,7 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var upcomingAssignmentsRecyclerView: RecyclerView
     private lateinit var manageAssignmentsButton: Button
     private lateinit var testNotificationButton: Button
+    private lateinit var startStudySessionButton: Button
 
     private lateinit var studySessionAdapter: StudySessionAdapter
     private lateinit var assignmentAdapter: AssignmentAdapter
@@ -69,6 +70,10 @@ class DashboardActivity : AppCompatActivity() {
             val reminderWorkRequest = OneTimeWorkRequestBuilder<ReminderWorker>().build()
             WorkManager.getInstance(applicationContext).enqueue(reminderWorkRequest)
         }
+
+        startStudySessionButton.setOnClickListener {
+            showStartStudySessionDialog()
+        }
     }
 
     override fun onResume() {
@@ -86,6 +91,7 @@ class DashboardActivity : AppCompatActivity() {
         upcomingAssignmentsRecyclerView = findViewById(R.id.upcomingAssignmentsRecyclerView)
         manageAssignmentsButton = findViewById(R.id.manageAssignmentsButton)
         testNotificationButton = findViewById(R.id.test_notification_button)
+        startStudySessionButton = findViewById(R.id.startStudySessionButton)
     }
 
     private fun handleWindowInsets() {
@@ -112,7 +118,7 @@ class DashboardActivity : AppCompatActivity() {
             onCheckboxClicked = { assignment ->
                 val newCompletionState = !assignment.isCompleted
                 showCompletionConfirmationDialog(assignment, newCompletionState)
-        })
+            })
         upcomingAssignmentsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@DashboardActivity)
             adapter = assignmentAdapter
@@ -200,5 +206,68 @@ class DashboardActivity : AppCompatActivity() {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+    }
+
+    private fun showStartStudySessionDialog() {
+        val dialogView = android.view.LayoutInflater.from(this)
+            .inflate(R.layout.dialog_start_study_session, null)
+
+        val courseSpinner = dialogView.findViewById<android.widget.Spinner>(R.id.courseSpinner)
+        val customDurationInput = dialogView.findViewById<android.widget.EditText>(R.id.customDurationInput)
+        val duration15 = dialogView.findViewById<Button>(R.id.duration15)
+        val duration25 = dialogView.findViewById<Button>(R.id.duration30)
+        val duration45 = dialogView.findViewById<Button>(R.id.duration45)
+        val duration60 = dialogView.findViewById<Button>(R.id.duration60)
+
+        val courses = databaseHelper.getAllCourses()
+        val courseNames = courses.map { it.name }
+        val courseAdapter = android.widget.ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            courseNames
+        )
+        courseAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        courseSpinner.adapter = courseAdapter
+
+        var selectedMinutes = 25
+
+        duration15.setOnClickListener {
+            selectedMinutes = 15
+            customDurationInput.setText("")
+        }
+        duration25.setOnClickListener {
+            selectedMinutes = 30
+            customDurationInput.setText("")
+        }
+        duration45.setOnClickListener {
+            selectedMinutes = 45
+            customDurationInput.setText("")
+        }
+        duration60.setOnClickListener {
+            selectedMinutes = 60
+            customDurationInput.setText("")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Start Study Session")
+            .setView(dialogView)
+            .setPositiveButton("Start") { _, _ ->
+                val customDuration = customDurationInput.text.toString()
+                val finalMinutes = if (customDuration.isNotEmpty()) {
+                    customDuration.toIntOrNull() ?: selectedMinutes
+                } else {
+                    selectedMinutes
+                }
+
+                val selectedCourse = courses[courseSpinner.selectedItemPosition]
+
+                val intent = Intent(this, com.example.studybuddy.ui.timer.StudyTimerActivity::class.java)
+                intent.putExtra("STUDY_MINUTES", finalMinutes)
+                intent.putExtra("COURSE_ID", selectedCourse.courseId)
+                intent.putExtra("COURSE_NAME", selectedCourse.name)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }
