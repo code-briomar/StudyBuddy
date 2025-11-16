@@ -16,9 +16,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.StudyBuddy"
         tools:targetApi="31">
+
         <activity
             android:name=".ui.assignments.ManageAssignmentsActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.timer.StudyTimerActivity"
+            android:exported="false" />
+
         <activity
             android:name=".ui.dashboard.DashboardActivity"
             android:exported="true"
