@@ -36,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        dataBinding = true
     }
 }
 
@@ -54,7 +55,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("com.kizitonwose.calendarview:calendarview:2.5.1")
+    implementation("com.kizitonwose.calendar:view:2.5.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.0")
     implementation("androidx.fragment:fragment-ktx:1.7.1")
@@ -67,3 +68,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
 }
+
+// Force a refresh
