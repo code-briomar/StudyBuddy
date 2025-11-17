@@ -17,15 +17,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.studybuddy.R
 import com.example.studybuddy.StudyBuddyApplication
 import com.example.studybuddy.adapters.AssignmentAdapter
 import com.example.studybuddy.adapters.StudySessionAdapter
 import com.example.studybuddy.database.DatabaseHelper
 import com.example.studybuddy.models.StudySession
-import com.example.studybuddy.notification.ReminderWorker
+import com.example.studybuddy.notification.NotificationHelper
 import com.example.studybuddy.ui.assignments.ManageAssignmentsActivity
 
 
@@ -38,12 +36,12 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var recentSessionsRecyclerView: RecyclerView
     private lateinit var upcomingAssignmentsRecyclerView: RecyclerView
     private lateinit var manageAssignmentsButton: Button
-    private lateinit var testNotificationButton: Button
     private lateinit var startStudySessionButton: Button
 
     private lateinit var studySessionAdapter: StudySessionAdapter
     private lateinit var assignmentAdapter: AssignmentAdapter
     private val databaseHelper: DatabaseHelper by lazy { (application as StudyBuddyApplication).databaseHelper }
+    private val notificationHelper: NotificationHelper by lazy { NotificationHelper(this) }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -61,14 +59,11 @@ class DashboardActivity : AppCompatActivity() {
         setupRecyclerViews()
         loadDashboardData()
 
+        notificationHelper.showWelcomeNotification()
+
         manageAssignmentsButton.setOnClickListener {
             val intent = Intent(this, ManageAssignmentsActivity::class.java)
             startActivity(intent)
-        }
-
-        testNotificationButton.setOnClickListener {
-            val reminderWorkRequest = OneTimeWorkRequestBuilder<ReminderWorker>().build()
-            WorkManager.getInstance(applicationContext).enqueue(reminderWorkRequest)
         }
 
         startStudySessionButton.setOnClickListener {
@@ -90,7 +85,6 @@ class DashboardActivity : AppCompatActivity() {
         recentSessionsRecyclerView = findViewById(R.id.recentSessionsRecyclerView)
         upcomingAssignmentsRecyclerView = findViewById(R.id.upcomingAssignmentsRecyclerView)
         manageAssignmentsButton = findViewById(R.id.manageAssignmentsButton)
-        testNotificationButton = findViewById(R.id.test_notification_button)
         startStudySessionButton = findViewById(R.id.startStudySessionButton)
     }
 

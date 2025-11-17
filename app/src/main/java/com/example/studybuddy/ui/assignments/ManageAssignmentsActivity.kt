@@ -22,6 +22,7 @@ import com.example.studybuddy.adapters.AssignmentAdapter
 import com.example.studybuddy.database.DatabaseHelper
 import com.example.studybuddy.models.Assignment
 import com.example.studybuddy.models.Course
+import com.example.studybuddy.notification.NotificationScheduler
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -34,6 +35,7 @@ class ManageAssignmentsActivity : AppCompatActivity() {
     private lateinit var addAssignmentFab: com.google.android.material.floatingactionbutton.FloatingActionButton
     private lateinit var assignmentAdapter: AssignmentAdapter
     private val databaseHelper: DatabaseHelper by lazy { (application as StudyBuddyApplication).databaseHelper }
+    private val notificationScheduler: NotificationScheduler by lazy { NotificationScheduler(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,6 +114,13 @@ class ManageAssignmentsActivity : AppCompatActivity() {
             .setMessage(message)
             .setPositiveButton("Yes") { _, _ ->
                 databaseHelper.updateAssignmentCompletion(assignment.assignmentId, isCompleted)
+                if (isCompleted) {
+                    notificationScheduler.cancelAssignmentReminder(assignment.assignmentId)
+                } else {
+                    databaseHelper.getAssignmentById(assignment.assignmentId)?.let {
+                        notificationScheduler.scheduleAssignmentReminder(it)
+                    }
+                }
                 loadAllAssignments()
             }
             .setNegativeButton("Cancel", null)
@@ -199,6 +208,9 @@ class ManageAssignmentsActivity : AppCompatActivity() {
                         selectedCourse.courseId,
                         selectedDueDate
                     )
+                    databaseHelper.getAssignmentById(assignment.assignmentId)?.let {
+                        notificationScheduler.scheduleAssignmentReminder(it)
+                    }
                     loadAllAssignments()
                 }
             }
@@ -212,6 +224,7 @@ class ManageAssignmentsActivity : AppCompatActivity() {
             .setMessage("Are you sure you want to delete \"${assignment.title}\"? This action cannot be undone.")
             .setPositiveButton("Delete") { _, _ ->
                 databaseHelper.deleteAssignment(assignment.assignmentId)
+                notificationScheduler.cancelAssignmentReminder(assignment.assignmentId)
                 loadAllAssignments()
             }
             .setNegativeButton("Cancel", null)
@@ -264,12 +277,15 @@ class ManageAssignmentsActivity : AppCompatActivity() {
                 val selectedCourse = courses[courseSpinner.selectedItemPosition]
 
                 if (title.isNotEmpty()) {
-                    databaseHelper.addAssignment(
+                    val newAssignmentId = databaseHelper.addAssignment(
                         title,
                         description,
                         selectedCourse.courseId,
                         selectedDueDate
                     )
+                    databaseHelper.getAssignmentById(newAssignmentId.toInt())?.let {
+                        notificationScheduler.scheduleAssignmentReminder(it)
+                    }
                     loadAllAssignments()
                 }
             }

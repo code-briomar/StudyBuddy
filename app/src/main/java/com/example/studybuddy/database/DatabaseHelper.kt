@@ -274,6 +274,33 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return assignments
     }
 
+    fun getAssignmentById(assignmentId: Int): Assignment? {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_ASSIGNMENTS,
+            null,
+            "$COLUMN_ASSIGNMENT_ID = ?",
+            arrayOf(assignmentId.toString()),
+            null, null, null
+        )
+
+        var assignment: Assignment? = null
+        cursor.use {
+            if (it.moveToFirst()) {
+                assignment = Assignment(
+                    assignmentId = it.getInt(it.getColumnIndexOrThrow(COLUMN_ASSIGNMENT_ID)),
+                    courseId = it.getInt(it.getColumnIndexOrThrow(COLUMN_COURSE_ID)),
+                    title = it.getString(it.getColumnIndexOrThrow(COLUMN_ASSIGNMENT_TITLE)),
+                    description = it.getString(it.getColumnIndexOrThrow(COLUMN_ASSIGNMENT_DESCRIPTION)),
+                    dueDate = Date(it.getLong(it.getColumnIndexOrThrow(COLUMN_DUE_DATE))),
+                    isCompleted = it.getInt(it.getColumnIndexOrThrow(COLUMN_IS_COMPLETED)) == 1,
+                    createdDate = Date(it.getLong(it.getColumnIndexOrThrow(COLUMN_CREATED_DATE)))
+                )
+            }
+        }
+        return assignment
+    }
+
     fun getUpcomingAssignments(): List<Assignment> {
         val assignments = mutableListOf<Assignment>()
         val db = readableDatabase

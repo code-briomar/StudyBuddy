@@ -1,9 +1,13 @@
 package com.example.studybuddy.ui.timer
 
-import android.animation.ValueAnimator
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.os.Bundle
-import android.os.CountDownTimer
-import android.view.animation.LinearInterpolator
+import android.os.IBinder
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -13,11 +17,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.studybuddy.R
 import com.example.studybuddy.StudyBuddyApplication
 import com.example.studybuddy.database.DatabaseHelper
-import com.example.studybuddy.ui.timer.CircularProgressView
-import java.util.Date
+import com.example.studybuddy.services.StudyTimerService
 
 class StudyTimerActivity : AppCompatActivity() {
 
@@ -27,16 +31,43 @@ class StudyTimerActivity : AppCompatActivity() {
     private lateinit var pauseResumeButton: Button
     private lateinit var stopButton: Button
 
-    private var countDownTimer: CountDownTimer? = null
-    private var timeLeftInMillis: Long = 0
+    private var studyTimerService: StudyTimerService? = null
+    private var isBound = false
     private var totalTimeInMillis: Long = 0
-    private var isTimerRunning = false
     private var courseId: Int = 0
     private var courseName: String = ""
     private var originalMinutes: Int = 0
 
     private val databaseHelper: DatabaseHelper by lazy {
         (application as StudyBuddyApplication).databaseHelper
+    }
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as StudyTimerService.StudyTimerBinder
+            studyTimerService = binder.getService()
+            isBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            studyTimerService = null
+            isBound = false
+        }
+    }
+
+    private val timerUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val timeLeft = intent?.getLongExtra(StudyTimerService.EXTRA_TIME_LEFT, 0) ?: 0
+            updateTimerText(timeLeft)
+            updateProgress(timeLeft)
+        }
+    }
+
+    private val timerFinishReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            saveStudySession(true)
+            showCompletionDialog()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,13 +84,14 @@ class StudyTimerActivity : AppCompatActivity() {
 
         originalMinutes = minutes
         totalTimeInMillis = minutes * 60 * 1000L
-        timeLeftInMillis = totalTimeInMillis
 
         courseNameText.text = courseName
-        updateTimerText()
-        circularProgressView.setProgress(100f)
 
-        startTimer()
+        val serviceIntent = Intent(this, StudyTimerService::class.java).apply {
+            putExtra(StudyTimerService.EXTRA_MINUTES, minutes)
+        }
+        startService(serviceIntent)
+        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Study Session"
@@ -69,6 +101,18 @@ class StudyTimerActivity : AppCompatActivity() {
                 showExitConfirmation()
             }
         })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        LocalBroadcastManager.getInstance(this).registerReceiver(timerUpdateReceiver, IntentFilter(StudyTimerService.ACTION_TIMER_UPDATE))
+        LocalBroadcastManager.getInstance(this).registerReceiver(timerFinishReceiver, IntentFilter(StudyTimerService.ACTION_TIMER_FINISH))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(timerUpdateReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(timerFinishReceiver)
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -84,10 +128,14 @@ class StudyTimerActivity : AppCompatActivity() {
         stopButton = findViewById(R.id.stopButton)
 
         pauseResumeButton.setOnClickListener {
-            if (isTimerRunning) {
-                pauseTimer()
-            } else {
-                resumeTimer()
+            studyTimerService?.let {
+                if (it.isTimerRunning()) {
+                    it.pauseTimer()
+                    pauseResumeButton.text = "Resume"
+                } else {
+                    it.resumeTimer()
+                    pauseResumeButton.text = "Pause"
+                }
             }
         }
 
@@ -105,53 +153,24 @@ class StudyTimerActivity : AppCompatActivity() {
         }
     }
 
-    private fun startTimer() {
-        countDownTimer = object : CountDownTimer(timeLeftInMillis, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                timeLeftInMillis = millisUntilFinished
-                updateTimerText()
-                updateProgress()
-            }
-
-            override fun onFinish() {
-                isTimerRunning = false
-                saveStudySession(true) // Pass true to indicate completion
-                showCompletionDialog()
-            }
-        }.start()
-
-        isTimerRunning = true
-        pauseResumeButton.text = "Pause"
-    }
-
-    private fun pauseTimer() {
-        countDownTimer?.cancel()
-        isTimerRunning = false
-        pauseResumeButton.text = "Resume"
-    }
-
-    private fun resumeTimer() {
-        startTimer()
-    }
-
-    private fun updateTimerText() {
+    private fun updateTimerText(timeLeftInMillis: Long) {
         val minutes = (timeLeftInMillis / 1000) / 60
         val seconds = (timeLeftInMillis / 1000) % 60
         timerText.text = String.format("%02d:%02d", minutes, seconds)
     }
 
-    private fun updateProgress() {
+    private fun updateProgress(timeLeftInMillis: Long) {
         val progress = (timeLeftInMillis.toFloat() / totalTimeInMillis.toFloat()) * 100
         circularProgressView.setProgress(progress)
     }
 
     private fun saveStudySession(isCompleted: Boolean = false) {
-        // If timer completed fully, use the original minutes from intent
-        // Otherwise calculate based on elapsed time
         val studiedMinutes = if (isCompleted) {
             originalMinutes
         } else {
-            ((totalTimeInMillis - timeLeftInMillis) / 1000 / 60).toInt()
+            studyTimerService?.let {
+                ((totalTimeInMillis - it.getTimeLeftInMillis()) / 1000 / 60).toInt()
+            } ?: 0
         }
 
         if (studiedMinutes > 0) {
@@ -170,8 +189,9 @@ class StudyTimerActivity : AppCompatActivity() {
     private fun showCompletionDialog() {
         AlertDialog.Builder(this)
             .setTitle("Session Complete!")
-            .setMessage("Great job! You've completed your study session.")
+            .setMessage("Great job! You\'ve completed your study session.")
             .setPositiveButton("Finish") { _, _ ->
+                stopAndUnbindService()
                 finish()
             }
             .setCancelable(false)
@@ -183,16 +203,24 @@ class StudyTimerActivity : AppCompatActivity() {
             .setTitle("Stop Session?")
             .setMessage("Do you want to stop your study session? Your progress will be saved.")
             .setPositiveButton("Stop") { _, _ ->
-                pauseTimer()
                 saveStudySession()
+                stopAndUnbindService()
                 finish()
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
+    private fun stopAndUnbindService() {
+        if (isBound) {
+            unbindService(connection)
+            isBound = false
+        }
+        stopService(Intent(this, StudyTimerService::class.java))
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        countDownTimer?.cancel()
+        stopAndUnbindService()
     }
 }

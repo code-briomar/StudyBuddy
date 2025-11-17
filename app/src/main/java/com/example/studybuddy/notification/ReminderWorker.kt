@@ -15,7 +15,7 @@ class ReminderWorker(context: Context, workerParams: WorkerParameters) : Worker(
 
         val message = reminderManager.getReminderMessage()
         if (message != null) {
-            notificationHelper.showNotification("Study Buddy", message)
+            notificationHelper.showNotification("Study Buddy", message, NotificationHelper.REMINDER_CHANNEL_ID, 2)
         }
 
         return Result.success()
