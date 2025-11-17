@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp"
+    android:background="@color/white">
+
+    <TextView
+        android:id="@+id/courseNameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Study Session"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/dark_gray"
+        android:layout_marginBottom="48dp" />
+
+    <com.example.studybuddy.ui.timer.CircularProgressView
+        android:id="@+id/circularProgressView"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/timerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="30:00"
+        android:textSize="56sp"
+        android:textStyle="bold"
+        android:textColor="@color/colorPrimary"
+        android:layout_marginTop="-190dp"
+        android:layout_marginBottom="132dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="32dp">
+
+        <Button
+            android:id="@+id/pauseResumeButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Pause"
+            android:textSize="16sp"
+            android:padding="16dp"
+            android:layout_marginEnd="8dp"
+            style="?attr/materialButtonOutlinedStyle" />
+
+        <Button
+            android:id="@+id/stopButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Stop"
+            android:textSize="16sp"
+            android:padding="16dp"
+            android:layout_marginStart="8dp"
+            />
+    </LinearLayout>
+
+</LinearLayout>
