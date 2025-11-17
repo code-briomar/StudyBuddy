@@ -71,3 +71,4 @@
         tools:listitem="@layout/item_task_view" />
 
 </LinearLayout>
+

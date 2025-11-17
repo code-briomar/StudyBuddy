@@ -41,6 +41,7 @@ android {
 
 dependencies {
 
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.0")
     implementation("androidx.recyclerview:recyclerview:1.3.0")
@@ -53,7 +54,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.work.runtime)
     implementation("com.kizitonwose.calendarview:calendarview:2.5.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.0")

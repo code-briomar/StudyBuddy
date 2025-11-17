@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <!--
+      You can change the color to match your app's theme.
+      Using ?attr/colorPrimary will automatically adapt to your app's theme color.
+    -->
+    <solid android:color="?attr/colorPrimary" />
+
+    <size
+        android:width="6dp"
+        android:height="6dp" />
+</shape>
