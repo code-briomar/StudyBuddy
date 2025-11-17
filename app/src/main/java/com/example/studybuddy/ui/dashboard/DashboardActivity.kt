@@ -25,6 +25,7 @@ import com.example.studybuddy.database.DatabaseHelper
 import com.example.studybuddy.models.StudySession
 import com.example.studybuddy.notification.NotificationHelper
 import com.example.studybuddy.ui.assignments.ManageAssignmentsActivity
+import com.example.studybuddy.ui.calendar.CalendarFragment
 
 
 class DashboardActivity : AppCompatActivity() {
@@ -37,6 +38,7 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var upcomingAssignmentsRecyclerView: RecyclerView
     private lateinit var manageAssignmentsButton: Button
     private lateinit var startStudySessionButton: Button
+    private lateinit var calendarButton: Button
 
     private lateinit var studySessionAdapter: StudySessionAdapter
     private lateinit var assignmentAdapter: AssignmentAdapter
@@ -69,6 +71,13 @@ class DashboardActivity : AppCompatActivity() {
         startStudySessionButton.setOnClickListener {
             showStartStudySessionDialog()
         }
+
+        calendarButton.setOnClickListener {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, CalendarFragment())
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     override fun onResume() {
@@ -86,6 +95,7 @@ class DashboardActivity : AppCompatActivity() {
         upcomingAssignmentsRecyclerView = findViewById(R.id.upcomingAssignmentsRecyclerView)
         manageAssignmentsButton = findViewById(R.id.manageAssignmentsButton)
         startStudySessionButton = findViewById(R.id.startStudySessionButton)
+        calendarButton = findViewById(R.id.calendarButton)
     }
 
     private fun handleWindowInsets() {
